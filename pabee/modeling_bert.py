@@ -24,9 +24,16 @@ import torch
 from torch import nn
 from torch.nn import CrossEntropyLoss, MSELoss
 
-from transformers.activations import gelu, gelu_new, swish
+
+# from transformers.activations import gelu, gelu_new, swish
+# Yitao: remove swish
+from transformers.activations import gelu, gelu_new
+
+# from .configuration_bert import BertConfig
 from transformers.configuration_bert import BertConfig
-from transformers.file_utils import add_start_docstrings, add_start_docstrings_to_callable
+# from transformers import BertConfig
+
+# from transformers.file_utils import add_start_docstrings, add_start_docstrings_to_callable
 from transformers.modeling_utils import PreTrainedModel, prune_linear_layer
 
 
@@ -133,8 +140,9 @@ def load_tf_weights_in_bert(model, config, tf_checkpoint_path):
 def mish(x):
     return x * torch.tanh(nn.functional.softplus(x))
 
-
-ACT2FN = {"gelu": gelu, "relu": torch.nn.functional.relu, "swish": swish, "gelu_new": gelu_new, "mish": mish}
+# Yitao: remove swish
+# ACT2FN = {"gelu": gelu, "relu": torch.nn.functional.relu, "swish": swish, "gelu_new": gelu_new, "mish": mish}
+ACT2FN = {"gelu": gelu, "relu": torch.nn.functional.relu, "gelu_new": gelu_new, "mish": mish}
 
 
 BertLayerNorm = torch.nn.LayerNorm
@@ -595,10 +603,10 @@ BERT_INPUTS_DOCSTRING = r"""
 """
 
 
-@add_start_docstrings(
-    "The bare Bert Model transformer outputting raw hidden-states without any specific head on top.",
-    BERT_START_DOCSTRING,
-)
+# @add_start_docstrings(
+#     "The bare Bert Model transformer outputting raw hidden-states without any specific head on top.",
+#     BERT_START_DOCSTRING,
+# )
 class BertModel(BertPreTrainedModel):
     """
 
@@ -660,7 +668,7 @@ class BertModel(BertPreTrainedModel):
         for layer, heads in heads_to_prune.items():
             self.encoder.layer[layer].attention.prune_heads(heads)
 
-    @add_start_docstrings_to_callable(BERT_INPUTS_DOCSTRING)
+    # @add_start_docstrings_to_callable(BERT_INPUTS_DOCSTRING)
     def forward(
         self,
         input_ids=None,
@@ -762,8 +770,10 @@ class BertModel(BertPreTrainedModel):
         # positions we want to attend and -10000.0 for masked positions.
         # Since we are adding it to the raw scores before the softmax, this is
         # effectively the same as removing these entirely.
-        extended_attention_mask = extended_attention_mask.to(dtype=next(self.parameters()).dtype)  # fp16 compatibility
-        extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
+
+        # Commented out by Yitao
+        # extended_attention_mask = extended_attention_mask.to(dtype=next(self.parameters()).dtype)  # fp16 compatibility
+        # extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
 
         # If a 2D ou 3D attention mask is provided for the cross-attention
         # we need to make broadcastabe to [batch_size, num_heads, seq_length, seq_length]
@@ -874,11 +884,11 @@ class BertModel(BertPreTrainedModel):
         return res
 
 
-@add_start_docstrings(
-    """Bert Model with two heads on top as done during the pre-training: a `masked language modeling` head and
-    a `next sentence prediction (classification)` head. """,
-    BERT_START_DOCSTRING,
-)
+# @add_start_docstrings(
+#     """Bert Model with two heads on top as done during the pre-training: a `masked language modeling` head and
+#     a `next sentence prediction (classification)` head. """,
+#     BERT_START_DOCSTRING,
+# )
 class BertForPreTraining(BertPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
@@ -891,7 +901,7 @@ class BertForPreTraining(BertPreTrainedModel):
     def get_output_embeddings(self):
         return self.cls.predictions.decoder
 
-    @add_start_docstrings_to_callable(BERT_INPUTS_DOCSTRING)
+    # @add_start_docstrings_to_callable(BERT_INPUTS_DOCSTRING)
     def forward(
         self,
         input_ids=None,
@@ -978,7 +988,7 @@ class BertForPreTraining(BertPreTrainedModel):
         return outputs  # (loss), prediction_scores, seq_relationship_score, (hidden_states), (attentions)
 
 
-@add_start_docstrings("""Bert Model with a `language modeling` head on top. """, BERT_START_DOCSTRING)
+# @add_start_docstrings("""Bert Model with a `language modeling` head on top. """, BERT_START_DOCSTRING)
 class BertForMaskedLM(BertPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
@@ -991,7 +1001,7 @@ class BertForMaskedLM(BertPreTrainedModel):
     def get_output_embeddings(self):
         return self.cls.predictions.decoder
 
-    @add_start_docstrings_to_callable(BERT_INPUTS_DOCSTRING)
+    # @add_start_docstrings_to_callable(BERT_INPUTS_DOCSTRING)
     def forward(
         self,
         input_ids=None,
@@ -1090,9 +1100,9 @@ class BertForMaskedLM(BertPreTrainedModel):
         return outputs  # (masked_lm_loss), (ltr_lm_loss), prediction_scores, (hidden_states), (attentions)
 
 
-@add_start_docstrings(
-    """Bert Model with a `next sentence prediction (classification)` head on top. """, BERT_START_DOCSTRING,
-)
+# @add_start_docstrings(
+#     """Bert Model with a `next sentence prediction (classification)` head on top. """, BERT_START_DOCSTRING,
+# )
 class BertForNextSentencePrediction(BertPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
@@ -1102,7 +1112,7 @@ class BertForNextSentencePrediction(BertPreTrainedModel):
 
         self.init_weights()
 
-    @add_start_docstrings_to_callable(BERT_INPUTS_DOCSTRING)
+    # @add_start_docstrings_to_callable(BERT_INPUTS_DOCSTRING)
     def forward(
         self,
         input_ids=None,
@@ -1175,11 +1185,11 @@ class BertForNextSentencePrediction(BertPreTrainedModel):
         return outputs  # (next_sentence_loss), seq_relationship_score, (hidden_states), (attentions)
 
 
-@add_start_docstrings(
-    """Bert Model transformer with a sequence classification/regression head on top (a linear layer on top of
-    the pooled output) e.g. for GLUE tasks. """,
-    BERT_START_DOCSTRING,
-)
+# @add_start_docstrings(
+#     """Bert Model transformer with a sequence classification/regression head on top (a linear layer on top of
+#     the pooled output) e.g. for GLUE tasks. """,
+#     BERT_START_DOCSTRING,
+# )
 class BertForSequenceClassification(BertPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
@@ -1191,7 +1201,7 @@ class BertForSequenceClassification(BertPreTrainedModel):
 
         self.init_weights()
 
-    @add_start_docstrings_to_callable(BERT_INPUTS_DOCSTRING)
+    # @add_start_docstrings_to_callable(BERT_INPUTS_DOCSTRING)
     def forward(
         self,
         input_ids=None,
@@ -1278,11 +1288,11 @@ class BertForSequenceClassification(BertPreTrainedModel):
         return outputs  # (loss), logits, (hidden_states), (attentions)
 
 
-@add_start_docstrings(
-    """Bert Model with a multiple choice classification head on top (a linear layer on top of
-    the pooled output and a softmax) e.g. for RocStories/SWAG tasks. """,
-    BERT_START_DOCSTRING,
-)
+# @add_start_docstrings(
+#     """Bert Model with a multiple choice classification head on top (a linear layer on top of
+#     the pooled output and a softmax) e.g. for RocStories/SWAG tasks. """,
+#     BERT_START_DOCSTRING,
+# )
 class BertForMultipleChoice(BertPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
@@ -1293,7 +1303,7 @@ class BertForMultipleChoice(BertPreTrainedModel):
 
         self.init_weights()
 
-    @add_start_docstrings_to_callable(BERT_INPUTS_DOCSTRING)
+    # @add_start_docstrings_to_callable(BERT_INPUTS_DOCSTRING)
     def forward(
         self,
         input_ids=None,
@@ -1378,11 +1388,11 @@ class BertForMultipleChoice(BertPreTrainedModel):
         return outputs  # (loss), reshaped_logits, (hidden_states), (attentions)
 
 
-@add_start_docstrings(
-    """Bert Model with a token classification head on top (a linear layer on top of
-    the hidden-states output) e.g. for Named-Entity-Recognition (NER) tasks. """,
-    BERT_START_DOCSTRING,
-)
+# @add_start_docstrings(
+#     """Bert Model with a token classification head on top (a linear layer on top of
+#     the hidden-states output) e.g. for Named-Entity-Recognition (NER) tasks. """,
+#     BERT_START_DOCSTRING,
+# )
 class BertForTokenClassification(BertPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
@@ -1394,7 +1404,7 @@ class BertForTokenClassification(BertPreTrainedModel):
 
         self.init_weights()
 
-    @add_start_docstrings_to_callable(BERT_INPUTS_DOCSTRING)
+    # @add_start_docstrings_to_callable(BERT_INPUTS_DOCSTRING)
     def forward(
         self,
         input_ids=None,
@@ -1474,11 +1484,11 @@ class BertForTokenClassification(BertPreTrainedModel):
         return outputs  # (loss), scores, (hidden_states), (attentions)
 
 
-@add_start_docstrings(
-    """Bert Model with a span classification head on top for extractive question-answering tasks like SQuAD (a linear
-    layers on top of the hidden-states output to compute `span start logits` and `span end logits`). """,
-    BERT_START_DOCSTRING,
-)
+# @add_start_docstrings(
+#     """Bert Model with a span classification head on top for extractive question-answering tasks like SQuAD (a linear
+#     layers on top of the hidden-states output to compute `span start logits` and `span end logits`). """,
+#     BERT_START_DOCSTRING,
+# )
 class BertForQuestionAnswering(BertPreTrainedModel):
     def __init__(self, config):
         super(BertForQuestionAnswering, self).__init__(config)
@@ -1489,7 +1499,7 @@ class BertForQuestionAnswering(BertPreTrainedModel):
 
         self.init_weights()
 
-    @add_start_docstrings_to_callable(BERT_INPUTS_DOCSTRING)
+    # @add_start_docstrings_to_callable(BERT_INPUTS_DOCSTRING)
     def forward(
         self,
         input_ids=None,

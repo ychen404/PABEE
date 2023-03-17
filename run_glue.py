@@ -28,13 +28,15 @@ import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler, TensorDataset
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm, trange
+import pdb
+
 
 from transformers import (
     WEIGHTS_NAME,
     AdamW,
-    AlbertConfig,
+    # AlbertConfig,
     AlbertTokenizer,
-    BertConfig,
+    # BertConfig,
     BertTokenizer,
     DistilBertConfig,
     DistilBertForSequenceClassification,
@@ -58,6 +60,9 @@ from transformers import (
 )
 from pabee.modeling_albert import AlbertForSequenceClassification
 from pabee.modeling_bert import BertForSequenceClassification
+from pabee.configuration_bert import BertConfig
+from pabee.configuration_albert import AlbertConfig
+
 from transformers import glue_compute_metrics as compute_metrics
 from transformers import glue_convert_examples_to_features as convert_examples_to_features
 from transformers import glue_output_modes as output_modes
@@ -72,32 +77,35 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+# pdb.set_trace()
+
 ALL_MODELS = sum(
     (
         tuple(conf.pretrained_config_archive_map.keys())
         for conf in (
             BertConfig,
-            XLNetConfig,
-            XLMConfig,
-            RobertaConfig,
-            DistilBertConfig,
+            # XLNetConfig,
+            # XLMConfig,
+            # RobertaConfig,
+            # DistilBertConfig,
             AlbertConfig,
-            XLMRobertaConfig,
-            FlaubertConfig,
+            # XLMRobertaConfig,
+            # FlaubertConfig,
         )
     ),
     (),
 )
 
+
 MODEL_CLASSES = {
     "bert": (BertConfig, BertForSequenceClassification, BertTokenizer),
-    "xlnet": (XLNetConfig, XLNetForSequenceClassification, XLNetTokenizer),
-    "xlm": (XLMConfig, XLMForSequenceClassification, XLMTokenizer),
-    "roberta": (RobertaConfig, RobertaForSequenceClassification, RobertaTokenizer),
-    "distilbert": (DistilBertConfig, DistilBertForSequenceClassification, DistilBertTokenizer),
+    # "xlnet": (XLNetConfig, XLNetForSequenceClassification, XLNetTokenizer),
+    # "xlm": (XLMConfig, XLMForSequenceClassification, XLMTokenizer),
+    # "roberta": (RobertaConfig, RobertaForSequenceClassification, RobertaTokenizer),
+    # "distilbert": (DistilBertConfig, DistilBertForSequenceClassification, DistilBertTokenizer),
     "albert": (AlbertConfig, AlbertForSequenceClassification, AlbertTokenizer),
-    "xlmroberta": (XLMRobertaConfig, XLMRobertaForSequenceClassification, XLMRobertaTokenizer),
-    "flaubert": (FlaubertConfig, FlaubertForSequenceClassification, FlaubertTokenizer),
+    # "xlmroberta": (XLMRobertaConfig, XLMRobertaForSequenceClassification, XLMRobertaTokenizer),
+    # "flaubert": (FlaubertConfig, FlaubertForSequenceClassification, FlaubertTokenizer),
 }
 
 
@@ -294,16 +302,44 @@ def train(args, train_dataset, model, tokenizer):
 
 def evaluate(args, model, tokenizer, prefix="", patience=0):
 
-    if args.model_type == 'albert':
-        model.albert.set_regression_threshold(args.regression_threshold)
-        model.albert.set_patience(patience)
-        model.albert.reset_stats()
-    elif args.model_type == 'bert':
-        model.bert.set_regression_threshold(args.regression_threshold)
-        model.bert.set_patience(patience)
-        model.bert.reset_stats()
+    # # Use model.module for multiple gpu setting
+    # if args.n_gpu > 1:
+    #     model = model.module()
+    
+    # if args.model_type == 'albert':
+    #     model.albert.set_regression_threshold(args.regression_threshold)
+    #     model.albert.set_patience(patience)
+    #     model.albert.reset_stats()
+    # elif args.model_type == 'bert':
+    #     model.bert.set_regression_threshold(args.regression_threshold)
+    #     model.bert.set_patience(patience)
+    #     model.bert.reset_stats()
+    # else:
+    #     raise NotImplementedError()
+
+    # multi-gpu
+    if isinstance(model, torch.nn.DataParallel):
+        if args.model_type == 'albert':
+            model.module.albert.set_regression_threshold(args.regression_threshold)
+            model.module.albert.set_patience(patience)
+            model.module.albert.reset_stats()
+        elif args.model_type == 'bert':
+            model.module.bert.set_regression_threshold(args.regression_threshold)
+            model.module.bert.set_patience(patience)
+            model.module.bert.reset_stats()
+        else:
+            raise NotImplementedError()
     else:
-        raise NotImplementedError()
+        if args.model_type == 'albert':
+            model.albert.set_regression_threshold(args.regression_threshold)
+            model.albert.set_patience(patience)
+            model.albert.reset_stats()
+        elif args.model_type == 'bert':
+            model.bert.set_regression_threshold(args.regression_threshold)
+            model.bert.set_patience(patience)
+            model.bert.reset_stats()
+        else:
+            raise NotImplementedError()
 
     # Loop to handle MNLI double evaluation (matched, mis-matched)
     eval_task_names = ("mnli", "mnli-mm") if args.task_name == "mnli" else (args.task_name,)
@@ -416,7 +452,7 @@ def load_and_cache_examples(args, task, tokenizer, evaluate=False):
             label_list=label_list,
             max_length=args.max_seq_length,
             output_mode=output_mode,
-            pad_on_left=bool(args.model_type in ["xlnet"]),  # pad on the left for xlnet
+            # pad_on_left=bool(args.model_type in ["xlnet"]),  # pad on the left for xlnet
             pad_token=tokenizer.convert_tokens_to_ids([tokenizer.pad_token])[0],
             pad_token_segment_id=4 if args.model_type in ["xlnet"] else 0,
         )
@@ -680,7 +716,7 @@ def main():
     logger.info("Training/evaluation parameters %s", args)
 
     # Training
-    if args.do_train:
+    if args.do_train:        
         train_dataset = load_and_cache_examples(args, args.task_name, tokenizer, evaluate=False)
         global_step, tr_loss = train(args, train_dataset, model, tokenizer)
         logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
@@ -710,6 +746,7 @@ def main():
 
     # Evaluation
     results = {}
+
     if args.do_eval and args.local_rank in [-1, 0]:
         patience_list = [int(x) for x in args.patience.split(',')]
         tokenizer = tokenizer_class.from_pretrained(args.output_dir, do_lower_case=args.do_lower_case)

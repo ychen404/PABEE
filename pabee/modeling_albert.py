@@ -23,10 +23,13 @@ import torch.nn as nn
 from torch.nn import CrossEntropyLoss, MSELoss
 
 from transformers.configuration_albert import AlbertConfig
+# from transformers import AlbertConfig
+# from.configuration_albert import AlbertConfig
 from transformers.modeling_bert import ACT2FN, BertEmbeddings, BertSelfAttention, prune_linear_layer
+# from transformers.models.bert.modeling_bert import ACT2FN, BertEmbeddings, BertSelfAttention, prune_linear_layer
 from transformers.modeling_utils import PreTrainedModel
 
-from transformers.file_utils import add_start_docstrings, add_start_docstrings_to_callable
+# from transformers.file_utils import add_start_docstrings, add_start_docstrings_to_callable
 
 
 logger = logging.getLogger(__name__)
@@ -450,10 +453,10 @@ ALBERT_INPUTS_DOCSTRING = r"""
 """
 
 
-@add_start_docstrings(
-    "The bare ALBERT Model transformer outputting raw hidden-states without any specific head on top.",
-    ALBERT_START_DOCSTRING,
-)
+# @add_start_docstrings(
+#     "The bare ALBERT Model transformer outputting raw hidden-states without any specific head on top.",
+#     ALBERT_START_DOCSTRING,
+# )
 class AlbertModel(AlbertPreTrainedModel):
 
     config_class = AlbertConfig
@@ -522,7 +525,7 @@ class AlbertModel(AlbertPreTrainedModel):
             inner_group_idx = int(layer - group_idx * self.config.inner_group_num)
             self.encoder.albert_layer_groups[group_idx].albert_layers[inner_group_idx].attention.prune_heads(heads)
 
-    @add_start_docstrings_to_callable(ALBERT_INPUTS_DOCSTRING)
+    # @add_start_docstrings_to_callable(ALBERT_INPUTS_DOCSTRING)
     def forward(
         self,
         input_ids=None,
@@ -695,9 +698,9 @@ class AlbertMLMHead(nn.Module):
         return prediction_scores
 
 
-@add_start_docstrings(
-    "Albert Model with a `language modeling` head on top.", ALBERT_START_DOCSTRING,
-)
+# @add_start_docstrings(
+#     "Albert Model with a `language modeling` head on top.", ALBERT_START_DOCSTRING,
+# )
 class AlbertForMaskedLM(AlbertPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
@@ -714,7 +717,7 @@ class AlbertForMaskedLM(AlbertPreTrainedModel):
     def get_output_embeddings(self):
         return self.predictions.decoder
 
-    @add_start_docstrings_to_callable(ALBERT_INPUTS_DOCSTRING)
+    # @add_start_docstrings_to_callable(ALBERT_INPUTS_DOCSTRING)
     def forward(
         self,
         input_ids=None,
@@ -783,11 +786,11 @@ class AlbertForMaskedLM(AlbertPreTrainedModel):
         return outputs
 
 
-@add_start_docstrings(
-    """Albert Model transformer with a sequence classification/regression head on top (a linear layer on top of
-    the pooled output) e.g. for GLUE tasks. """,
-    ALBERT_START_DOCSTRING,
-)
+# @add_start_docstrings(
+#     """Albert Model transformer with a sequence classification/regression head on top (a linear layer on top of
+#     the pooled output) e.g. for GLUE tasks. """,
+#     ALBERT_START_DOCSTRING,
+# )
 class AlbertForSequenceClassification(AlbertPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
@@ -799,7 +802,7 @@ class AlbertForSequenceClassification(AlbertPreTrainedModel):
 
         self.init_weights()
 
-    @add_start_docstrings_to_callable(ALBERT_INPUTS_DOCSTRING)
+    # @add_start_docstrings_to_callable(ALBERT_INPUTS_DOCSTRING)
     def forward(
         self,
         input_ids=None,
@@ -884,11 +887,11 @@ class AlbertForSequenceClassification(AlbertPreTrainedModel):
         return outputs  # (loss), logits, (hidden_states), (attentions)
 
 
-@add_start_docstrings(
-    """Albert Model with a span classification head on top for extractive question-answering tasks like SQuAD (a linear layers on top of
-    the hidden-states output to compute `span start logits` and `span end logits`). """,
-    ALBERT_START_DOCSTRING,
-)
+# @add_start_docstrings(
+#     """Albert Model with a span classification head on top for extractive question-answering tasks like SQuAD (a linear layers on top of
+#     the hidden-states output to compute `span start logits` and `span end logits`). """,
+#     ALBERT_START_DOCSTRING,
+# )
 class AlbertForQuestionAnswering(AlbertPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
@@ -899,7 +902,7 @@ class AlbertForQuestionAnswering(AlbertPreTrainedModel):
 
         self.init_weights()
 
-    @add_start_docstrings_to_callable(ALBERT_INPUTS_DOCSTRING)
+    # @add_start_docstrings_to_callable(ALBERT_INPUTS_DOCSTRING)
     def forward(
         self,
         input_ids=None,
